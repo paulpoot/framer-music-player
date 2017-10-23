@@ -15,6 +15,7 @@ screenWidth = Framer.Device.screen.width
 screenHeight = Framer.Device.screen.height
 
 primaryGradient = "-webkit-linear-gradient(right, #00adb5 0%, #2cc390 100%)"
+nowPlaying = false
 
 bg = new BackgroundLayer
     image: "images/bg.png"
@@ -45,6 +46,65 @@ appTitle = new TextLayer
     x: Align.center
     y: Align.center(-10)
     superLayer: appBar
+
+heartOutlineButton = new Icon
+    icon: "heart-outline"
+    index: 1
+    width: 50
+    height: 50
+    x: screenWidth - 80
+    y: Align.center
+    color: "#fff"
+    superLayer: appBar
+
+heartButton = new Icon
+    icon: "heart"
+    index: -1
+    opacity: 0
+    width: 50
+    height: 50
+    x: screenWidth - 80
+    y: Align.center(-20)
+    color: "#00adb5"
+    superLayer: appBar
+
+heartOutlineOut = new Animation heartOutlineButton,
+    index: -1
+    opacity: 0
+    y: Align.center(-20)
+    options:
+        time: .5
+        curve: Spring
+
+heartOutlineIn = heartOutlineOut.reverse()
+    
+heartIn = new Animation heartButton,
+    index: 1
+    opacity: 1
+    y: Align.center
+    options:
+        time: .5
+        curve: Spring
+
+heartOut = heartIn.reverse()
+
+favourite = ->
+    heartOutlineIn.stop()
+    heartOut.stop()
+    heartOutlineOut.start()
+    heartIn.start()
+
+unfavourite = ->
+    heartOutlineOut.stop()
+    heartIn.stop()
+    heartOutlineIn.start()
+    heartOut.start()
+
+heartOutlineButton.onClick ->
+    favourite()
+
+heartButton.onClick ->
+    unfavourite()
 
 #####################################################
 #   Carousel
@@ -82,11 +142,14 @@ blurredArt = new Layer
     width: screenWidth
     height: screenHeight
     blur: 50
-    opacity: .5
+    opacity: .2
     index: -1
 
+updateBlurArt = ->
+    blurredArt.image = "images/" + carouselImgPrefix + (carousel.row.currentPage.index - 1) + carouselImgSuffix
+
 #####################################################
-#   Carousel
+#   Progress Bar
 #####################################################
 progressBar = new Layer
     width: 0
@@ -101,7 +164,7 @@ progressBar.style.background = primaryGradient
 progressBarPlay = new Animation progressBar,
     width: screenWidth
     options:
-        time: 5
+        time: 30
         curve: Bezier.linear
 
 progressBarReset = new Animation progressBar,
@@ -110,6 +173,15 @@ progressBarReset = new Animation progressBar,
         time: .2
         curve: Bezier.easeInOut
 
+resetProgress = ->
+    progressBar.width = 0
+
+    if nowPlaying
+        progressBarPlay.start()
+
+#####################################################
+#   Controls
+#####################################################
 controls = new Layer
     width: screenWidth
     height: 165
@@ -168,8 +240,6 @@ pauseButton.states =
 pauseButton.states.animationOptions =
     curve: Spring
 
-nowPlaying = false
-
 cyclePlay = ->
     if nowPlaying is true
         progressBarPlay.stop()
@@ -182,26 +252,17 @@ cyclePlay = ->
         pauseButton.animate('active')
         nowPlaying = true
 
-resetProgress = ->
-    progressBar.width = 0
-
-    if nowPlaying
-        progressBarPlay.start()
-
-updateBlurArt = ->
-    blurredArt.image = "images/" + carouselImgPrefix + (carousel.row.currentPage.index - 1) + carouselImgSuffix
-
 nextSong = -> 
     carousel.row.snapToNextPage()
     resetProgress()
     updateBlurArt()
+    unfavourite()
 
 previousSong = ->
-    reachedEnd = false
-    print "end? " + reachedEnd
     carousel.row.snapToPreviousPage()
     resetProgress()
     updateBlurArt()
+    unfavourite()
 
 updateBlurArt()
 
@@ -218,15 +279,11 @@ previousButton.onClick ->
     previousSong()
 
 carousel.row.content.on "change:x", ->
-    reachedEnd = false
     resetProgress()
     updateBlurArt()
-
-reachedEnd = false
+    unfavourite()
 
 progressBarPlay.on Events.AnimationEnd, ->
-    print carousel.row.currentPage.index
-    print "----------"
     progressBarReset.start()
 
 progressBarReset.on Events.AnimationEnd, ->
