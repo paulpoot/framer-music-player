@@ -11,6 +11,8 @@ if not Framer.Device
     Framer.Device.setupContext();
     # End from framer.generated.js 
 
+Framer.Extras.Hints.disable()
+
 screenWidth = Framer.Device.screen.width
 screenHeight = Framer.Device.screen.height
 
@@ -135,8 +137,10 @@ carousel = new CarouselComponent
     captionMargin: 100
     subcaptionMargin: 40
     margins: [appBar.height + 75, carouselItemMarginR, 60, carouselItemMarginL]
+    debug: false
     imagePrefix: carouselImgPrefix
 	imageSuffix: carouselImgSuffix
+    
 
 blurredArt = new Layer
     width: screenWidth
